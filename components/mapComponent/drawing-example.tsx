@@ -32,6 +32,12 @@ import { DrawingActionKind } from "./types";
 
 const MAP_ID = process.env.NEXT_PUBLIC_GOOGLE_MAP_ID as string;
 
+const PC_IP = "http://100.97.75.64";
+const LAPTOP_IP = "http://100.118.177.47";
+
+// adjustable GPS fetch rate in milliseconds
+const gpsPollIntervalMs = 1000; // 1 second
+
 const DrawingExample = () => {
 
     // State to store drawn shapes
@@ -56,19 +62,18 @@ const DrawingExample = () => {
 
     // ✅ This stores the robot's real-time position from farm-ng
 
-    const [robotPosition, setRobotPosition] = useState<{ lat: number; lng: number } | null>(null);
+    const [robotPosition, setRobotPosition] = useState<{ lat: number; lng: number; precision?: number } | null>(null);
 
     const dispatchRef = useRef<React.Dispatch<unknown> | null>(null);
 
-    // ✅ Poll robot GPS from FastAPI backend (every 3 sec)
-
+    // ✅ Poll robot GPS from FastAPI backend
     useEffect(() => {
 
         const fetchRobotGps = async () => {
 
             try {
 
-                const response = await fetch("http://100.97.75.64:8000/robot_gps");
+                const response = await fetch(`${LAPTOP_IP}:8000/robot_gps`);
 
                 if (!response.ok) return;
 
@@ -82,7 +87,11 @@ const DrawingExample = () => {
 
                     data.lng !== null && data.lng !== undefined) {
 
-                    setRobotPosition({ lat: data.lat, lng: data.lng });
+                    setRobotPosition({
+                        lat: data.lat,
+                        lng: data.lng,
+                        precision: data.precision
+                    });
 
                 }
 
@@ -96,7 +105,7 @@ const DrawingExample = () => {
 
         fetchRobotGps();
 
-        const interval = setInterval(fetchRobotGps, 3000);
+        const interval = setInterval(fetchRobotGps, gpsPollIntervalMs);
 
         return () => clearInterval(interval);
 
@@ -246,73 +255,51 @@ const DrawingExample = () => {
 
     };
 
-    // Push all drawn coordinates to FastAPI at /coordinates
-
     const pushCoordinates = async () => {
-
         try {
-
-            const response = await fetch("http://100.97.75.64:8000/coordinates", {
-
+            const response = await fetch(`${LAPTOP_IP}:8000/coordinates`, {
                 method: "POST",
-
                 headers: { "Content-Type": "application/json" },
-
                 body: JSON.stringify(nodes),
-
             });
-
             const data = await response.json();
-
             console.log("📤 Farm-ng response:", data);
-
             alert("Coordinates sent to Farm-ng!");
-
             setCoordinatesPushed(true);
 
+            // Automatically start following the track
+            await fetch(`${LAPTOP_IP}:8000/set_track`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(nodes),
+            });
+            alert("Track loaded; robot starting to follow path!");
         } catch (error) {
-
-            console.error("Failed to send coordinates: ", error);
-
-            alert("Failed to send coordinates.");
-
+            console.error("Failed to send coordinates or set track:", error);
+            alert("Failed to send or start track.");
+            setCoordinatesPushed(false);
         }
-
     };
+
 
     const runFarmNg = async () => {
-
         setIsRunning(true);
-
         try {
-
-            const response = await fetch("http://100.97.75.64:8000/run", {
-
+            // Toggle track follower stop or pause
+            const response = await fetch(`${LAPTOP_IP}:8000/stop_track`, {
                 method: "POST",
-
                 headers: { "Content-Type": "application/json" },
-
-                body: JSON.stringify({ action: "start" }),
-
             });
-
             const data = await response.json();
-
-            alert("Farm-ng is now running!");
-
-            console.log("🚜 Run response:", data);
-
+            alert("Track follower stopped.");
+            console.log("🚜 StopTrack response:", data);
         } catch (error) {
-
-            alert("Failed to start Farm-ng.");
-
-            console.error("Failed to start Farm-ng:", error);
-
+            console.error("Failed to stop track follower:", error);
+            alert("Failed to stop track follower.");
         }
-
         setIsRunning(false);
-
     };
+
 
 
 
@@ -325,7 +312,7 @@ const DrawingExample = () => {
                 defaultZoom={18}
                 center={robotPosition ?? { lat: 38.94171479639421, lng: -92.31970464069614 }} //set to GPS position of farm-ng, else default to lat: 38.94171479639421, lng: -92.31970464069614
 
-                
+
 
                 gestureHandling="greedy"
 
@@ -415,6 +402,9 @@ const DrawingExample = () => {
                     <>
                         <p><strong>Latitude:</strong> {robotPosition.lat.toFixed(6)}</p>
                         <p><strong>Longitude:</strong> {robotPosition.lng.toFixed(6)}</p>
+                        {robotPosition.precision !== undefined && (
+                            <p><strong>Precision (HDOP):</strong> {robotPosition.precision}</p>
+                        )}
                     </>
 
                 ) : (
@@ -488,7 +478,7 @@ const DrawingExample = () => {
                 </ul>
             </div>
 
-            
+
         </>
 
     );
