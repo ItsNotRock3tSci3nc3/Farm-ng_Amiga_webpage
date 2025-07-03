@@ -1,12 +1,12 @@
 "use client";
 
-import Map from "@/components/mapComponent/app";
+import DrawingExample from "@/components/mapComponent/drawing-example";
+import { APIProvider } from "@vis.gl/react-google-maps";
 
 export default function MapPage() {
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-4">Interactive Map ChangeMapStyles</h1>
-      <Map />
-    </div>
+    <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}>
+      <DrawingExample />
+    </APIProvider>
   );
 }

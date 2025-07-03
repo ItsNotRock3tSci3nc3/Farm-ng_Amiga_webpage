@@ -7,7 +7,7 @@ export function getAllCoordinates(overlays: Overlay[]): { lat: number; lng: numb
         if (!overlay.geometry) return;
 
         if (overlay.type === "polygon" || overlay.type === "polyline") {
-            // 获取多边形或折线的所有点
+            // Get all points of the polygon or polyline
             const path = overlay.geometry.getPath().getArray();
             const coords = path.map((latLng: google.maps.LatLng) => ({
                 lat: latLng.lat(),
@@ -15,13 +15,13 @@ export function getAllCoordinates(overlays: Overlay[]): { lat: number; lng: numb
             }));
             allNodes = [...allNodes, ...coords];
         } else if (overlay.type === "marker") {
-            // 获取标记点的坐标
+            // Get the coordinates of the marker
             const position = overlay.geometry.getPosition();
             if (position) {
                 allNodes.push({ lat: position.lat(), lng: position.lng() });
             }
         } else if (overlay.type === "rectangle") {
-            // 获取矩形的四个角点
+            // Get the four corner points of the rectangle
             const bounds = overlay.geometry.getBounds();
             if (bounds) {
                 allNodes.push(
@@ -30,7 +30,7 @@ export function getAllCoordinates(overlays: Overlay[]): { lat: number; lng: numb
                 );
             }
         } else if (overlay.type === "circle") {
-            // 获取圆的中心点
+            // Get the center point of the circle
             const center = overlay.geometry.getCenter();
             if (center) {
                 allNodes.push({ lat: center.lat(), lng: center.lng() });

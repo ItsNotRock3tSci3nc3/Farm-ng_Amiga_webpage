@@ -6,6 +6,7 @@ export default function Navbar() {
       <div className="container mx-auto flex space-x-4">
         <Link href="/" className="hover:underline">Home</Link>
         <Link href="/map" className="hover:underline">Map</Link>
+        <Link href="/controller" className="hover:underline">Controller</Link>
         <Link href="/about" className="hover:underline">About</Link>
       </div>
     </nav>
