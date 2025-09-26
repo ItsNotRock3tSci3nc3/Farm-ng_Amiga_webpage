@@ -5,6 +5,7 @@ services:
     working_dir: /app
     volumes:
       - .:/app
+      - ./secrets/firebase-key.json:/app/secrets/firebase-key.json:ro
     ports:
       - "3000:3000"
     command: sh -c "npm install && npm run dev"

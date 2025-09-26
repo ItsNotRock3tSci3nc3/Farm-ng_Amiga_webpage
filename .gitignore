@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+#firebase secrets
+paal-farm-ng-firebase-adminsdk-fbsvc-fcc0d0fd71.json
+firebase-key.json
